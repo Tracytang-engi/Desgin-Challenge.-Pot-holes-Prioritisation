@@ -1,4 +1,5 @@
 dashboard/.env
+dashboard/public/dashboard_data
 node_modules/
 dft_traffic_counts_aadf.csv
 __pycache__/

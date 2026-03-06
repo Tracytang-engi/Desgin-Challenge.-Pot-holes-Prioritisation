@@ -1,0 +1,9 @@
+[
+  {
+    "route_id": "sim",
+    "route_name": "Simulated Route",
+    "start": [52.46, -1.94],
+    "end": [52.49, -1.90],
+    "coordinates": []
+  }
+]

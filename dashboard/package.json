@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "ensure-data": "node scripts/ensure-data.js",
     "fix-data": "node scripts/inject-potholes.js",
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "dev": "node scripts/copy-data.js && vite",
+    "build": "node scripts/copy-data.js && tsc && vite build",
     "preview": "vite preview",
     "server": "node server/index.js",
-    "demo": "concurrently \"npm run server\" \"npm run dev\""
+    "demo": "npm run ensure-data && concurrently \"npm run server\" \"npm run dev\""
   },
   "dependencies": {
     "cors": "^2.8.5",

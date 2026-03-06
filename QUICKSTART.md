@@ -38,21 +38,17 @@ Output: `priority_roads.csv`, `ladywood_map.png`, and `dashboard_data/` in the p
 ## Option 2: Full demo (Python + Dashboard)
 
 ```bash
-# 1. Install Python dependencies
-pip install -r requirements.txt
-
-# 2. Generate data (first run: ~1–3 min to download Ladywood roads)
-cd pothole_system
-python main.py
-cd ..
-
-# 3. Install and start the dashboard
+# 1. Install dashboard dependencies
 cd dashboard
 npm install
+
+# 2. Start (runs Python pipeline automatically if no data; first run ~1–3 min)
 npm run demo
 
-# 4. Open http://localhost:5173 in your browser
+# 3. Open http://localhost:5173 in your browser
 ```
+
+Or run Python first manually: `pip install -r requirements.txt && python pothole_system/main.py`
 
 ---
 
