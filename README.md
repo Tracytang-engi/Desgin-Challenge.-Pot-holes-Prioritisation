@@ -129,7 +129,7 @@ A Node.js + Vite dashboard for visualising results:
 
 ## Traffic Data
 
-Place `dft_traffic_counts_aadf.csv` (UK AADF dataset) in the project root, or the system runs with traffic=0 for all roads.
+Place `dft_traffic_counts_aadf.csv` (UK AADF dataset) in the project root, or the system runs with traffic=0 for all roads. Download from [DfT Road Traffic Statistics](https://roadtraffic.dft.gov.uk/downloads) (file exceeds GitHub limit, not included in repo).
 
 **Why many roads show traffic=0:** UK AADF has count points only at specific locations (~46k nationwide). Each count point is matched to its *nearest* road segment. Roads without a nearby count point get traffic=0. The bbox is expanded by ~1.5 km to capture count points near Ladywood.
 
