@@ -4,6 +4,8 @@ A Python prototype for Ladywood, Birmingham that combines bus-mounted sensor pot
 
 **[Quick Start](QUICKSTART.md)** — Get running in a few minutes.
 
+**Deploy to Vercel:** Connect this repo to [Vercel](https://vercel.com); `vercel.json` is configured. The `dashboard_data/` folder (included in repo) provides sample data for the live demo.
+
 ---
 
 ## Data Sources (数据来源)
