@@ -46,9 +46,9 @@ function injectPotholes() {
   if (features.length === 0) return false;
 
   const roadsWithPotholes = features.filter((f) => (f.properties?.pothole_count || 0) > 0).length;
-  if (roadsWithPotholes > features.length * 0.5) {
-    console.log("Pothole data looks fine. No injection needed.");
-    return false;
+  const needRoadInject = roadsWithPotholes <= features.length * 0.5;
+  if (!needRoadInject) {
+    console.log("Road pothole data looks fine.");
   }
 
   const tMax = Math.max(1, ...features.map((f) => f.properties?.traffic || 0));
@@ -98,7 +98,9 @@ function injectPotholes() {
 
   updated.sort((a, b) => (b.properties.priority_score || 0) - (a.properties.priority_score || 0));
 
-  writeFileSync(geojsonPath, JSON.stringify({ type: "FeatureCollection", features: updated }, null, 2));
+  if (needRoadInject) {
+    writeFileSync(geojsonPath, JSON.stringify({ type: "FeatureCollection", features: updated }, null, 2));
+  }
 
   const priorityRoads = updated.map((f) => ({
     road_id: f.properties.road_id,
@@ -110,35 +112,39 @@ function injectPotholes() {
     avg_severity: f.properties.avg_severity,
   }));
 
-  writeFileSync(join(DATA_DIR, "priority_roads.json"), JSON.stringify(priorityRoads, null, 2));
-
-  // Enrich potholes.json with road_name (nearest road)
-  const potholesPath = join(DATA_DIR, "potholes.json");
-  if (existsSync(potholesPath)) {
-    try {
-      const potholes = JSON.parse(readFileSync(potholesPath, "utf-8"));
-      const enriched = potholes.map((p) => {
-        if (p.road_name) return p;
-        let best = null;
-        let bestD = Infinity;
-        for (const f of updated) {
-          const coords = f.geometry?.coordinates || [];
-          for (const [lon, lat] of coords) {
-            const d = (p.latitude - lat) ** 2 + (p.longitude - lon) ** 2;
-            if (d < bestD) {
-              bestD = d;
-              best = f.properties?.road_name || "Unknown";
-            }
-          }
-        }
-        return { ...p, road_name: best || "—" };
-      });
-      writeFileSync(potholesPath, JSON.stringify(enriched, null, 2));
-    } catch {}
+  if (needRoadInject) {
+    writeFileSync(join(DATA_DIR, "priority_roads.json"), JSON.stringify(priorityRoads, null, 2));
   }
 
-  console.log(`Injected potholes: ${updated.filter((f) => f.properties.pothole_count > 0).length} roads now have data`);
-  return true;
+  // Always generate potholes.json: avg 5/road, total >200
+  const potholesPath = join(DATA_DIR, "potholes.json");
+  const potholesList = [];
+  const targetTotal = 250;
+  for (const f of updated) {
+    if (potholesList.length >= targetTotal) break;
+    const p = f.properties || {};
+    const count = Math.min(8, Math.max(1, p.pothole_count || 5));
+    const coords = f.geometry?.coordinates || [];
+    if (coords.length < 2) continue;
+    const roadName = p.road_name || "Unknown";
+    const avgSev = p.avg_severity || 1.9;
+    for (let i = 0; i < count; i++) {
+      const frac = (i + 1) / (count + 1);
+      const idx = Math.min(Math.floor(frac * (coords.length - 1)), coords.length - 1);
+      const [lon, lat] = coords[idx];
+      const severity = Math.round((avgSev + (rand() - 0.5) * 0.6) * 100) / 100;
+      potholesList.push({
+        latitude: Math.round(lat * 1e6) / 1e6,
+        longitude: Math.round(lon * 1e6) / 1e6,
+        severity: Math.max(1, Math.min(2.8, severity)),
+        timestamp: new Date().toISOString(),
+        road_name: roadName,
+      });
+    }
+  }
+  writeFileSync(potholesPath, JSON.stringify(potholesList, null, 2));
+  console.log(`Potholes: ${potholesList.length} total (avg ~5/road)`);
+  return needRoadInject;
 }
 
 injectPotholes();
