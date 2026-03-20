@@ -42,7 +42,7 @@ def simulate_road_potholes(edges, traffic_per_road: pd.DataFrame = None, seed=42
         count = max(1, int(base * age_f * traffic_f))
         count = min(count, 15)
 
-        severities = np.random.uniform(1.0, 2.8, count)
+        severities = np.random.uniform(0.2, 0.95, count)  # 0 ≤ S ≤ 1
         severity_sum = float(severities.sum())
         avg_severity = float(severities.mean())
 

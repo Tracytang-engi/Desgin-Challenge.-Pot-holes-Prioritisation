@@ -66,10 +66,10 @@ function injectPotholes() {
       const trafficF = tMax > 0 ? 0.9 + 0.3 * (traffic / tMax) : 0.95;
       const base = 2 + Math.floor(3 * rand());
       potholeCount = Math.max(1, Math.min(15, Math.round(base * trafficF)));
-      avgSeverity = 1.2 + 1.4 * rand();
+      avgSeverity = 0.2 + 0.75 * rand();  // 0 ≤ S ≤ 1
       severitySum = potholeCount * avgSeverity;
     } else {
-      severitySum = potholeCount * (p.avg_severity || 1.8);
+      severitySum = potholeCount * Math.min(1, Math.max(0, p.avg_severity || 0.6));
     }
 
     const coords = f.geometry?.coordinates || [];
@@ -77,12 +77,13 @@ function injectPotholes() {
     const psi = lengthM > 0 ? severitySum / lengthM : 0;
     psiMax = Math.max(psiMax, psi);
 
+    const avgSevClamped = Math.max(0, Math.min(1, avgSeverity));
     return {
       ...f,
       properties: {
         ...p,
         pothole_count: potholeCount,
-        avg_severity: Math.round(avgSeverity * 100) / 100,
+        avg_severity: Math.round(avgSevClamped * 100) / 100,
         psi: Math.round(psi * 100) / 100,
       },
     };
@@ -98,9 +99,8 @@ function injectPotholes() {
 
   updated.sort((a, b) => (b.properties.priority_score || 0) - (a.properties.priority_score || 0));
 
-  if (needRoadInject) {
-    writeFileSync(geojsonPath, JSON.stringify({ type: "FeatureCollection", features: updated }, null, 2));
-  }
+  // Always write (clamp avg_severity to 0–1)
+  writeFileSync(geojsonPath, JSON.stringify({ type: "FeatureCollection", features: updated }, null, 2));
 
   const priorityRoads = updated.map((f) => ({
     road_id: f.properties.road_id,
@@ -109,12 +109,10 @@ function injectPotholes() {
     pothole_count: f.properties.pothole_count,
     psi: f.properties.psi,
     priority_score: f.properties.priority_score,
-    avg_severity: f.properties.avg_severity,
+    avg_severity: Math.max(0, Math.min(1, f.properties.avg_severity ?? 0)),
   }));
 
-  if (needRoadInject) {
-    writeFileSync(join(DATA_DIR, "priority_roads.json"), JSON.stringify(priorityRoads, null, 2));
-  }
+  writeFileSync(join(DATA_DIR, "priority_roads.json"), JSON.stringify(priorityRoads, null, 2));
 
   // Always generate potholes.json: avg 5/road, total >200
   const potholesPath = join(DATA_DIR, "potholes.json");
@@ -127,16 +125,16 @@ function injectPotholes() {
     const coords = f.geometry?.coordinates || [];
     if (coords.length < 2) continue;
     const roadName = p.road_name || "Unknown";
-    const avgSev = p.avg_severity || 1.9;
+    const avgSev = Math.min(1, Math.max(0, p.avg_severity || 0.6));
     for (let i = 0; i < count; i++) {
       const frac = (i + 1) / (count + 1);
       const idx = Math.min(Math.floor(frac * (coords.length - 1)), coords.length - 1);
       const [lon, lat] = coords[idx];
-      const severity = Math.round((avgSev + (rand() - 0.5) * 0.6) * 100) / 100;
+      const severity = Math.round((avgSev + (rand() - 0.5) * 0.2) * 100) / 100;
       potholesList.push({
         latitude: Math.round(lat * 1e6) / 1e6,
         longitude: Math.round(lon * 1e6) / 1e6,
-        severity: Math.max(1, Math.min(2.8, severity)),
+        severity: Math.max(0, Math.min(1, severity)),
         timestamp: new Date().toISOString(),
         road_name: roadName,
       });

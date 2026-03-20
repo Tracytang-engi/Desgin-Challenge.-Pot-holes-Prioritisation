@@ -27,7 +27,9 @@ def simulate_bus_trip(edges_gdf, samples_per_km=50) -> tuple[pd.DataFrame, str]:
         # Simulate vertical acceleration: Normal(0,1) in g
         a_z = np.random.normal(0, 1)
         if abs(a_z) > THRESHOLD_G:
-            severity = abs(a_z) / THRESHOLD_G
+            # S = (|a_z| - a_min) / (a_max - a_min), 0 ≤ S ≤ 1
+            a_min, a_max = THRESHOLD_G, THRESHOLD_G * 2
+            severity = max(0, min(1, (abs(a_z) - a_min) / (a_max - a_min)))
             potholes.append({
                 "latitude": lat, "longitude": lon,
                 "severity": severity,

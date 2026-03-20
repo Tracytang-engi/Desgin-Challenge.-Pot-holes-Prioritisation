@@ -44,14 +44,14 @@ def _generate_pothole_points(edges, priority_df, existing):
         coords = list(geom.coords) if geom.geom_type == "LineString" else list(next(iter(geom.geoms), geom).coords)
         if len(coords) < 2:
             continue
-        avg_sev = float(prow.get("avg_severity", 1.9)) if pd.notna(prow.get("avg_severity")) else 1.9
+        avg_sev = float(prow.get("avg_severity", 0.6)) if pd.notna(prow.get("avg_severity")) else 0.6
         road_name = _get_road_name(edges, priority_df, road_id)
         for i in range(count):
             frac = (i + 1) / (count + 1)
             idx = min(int(frac * (len(coords) - 1)), len(coords) - 1)
             x, y = coords[idx]
             lon, lat = float(x), float(y)
-            severity = float(np.clip(avg_sev + np.random.normal(0, 0.3), 1.0, 2.8))
+            severity = float(np.clip(avg_sev + np.random.normal(0, 0.15), 0, 1))
             result.append({
                 "latitude": round(lat, 6),
                 "longitude": round(lon, 6),
@@ -102,10 +102,11 @@ def export_for_dashboard(edges, priority_df, potholes_df, output_dir: str, visit
         for _, row in df.iterrows():
             road_id = row.get("road_id")
             road_name = _get_road_name(edges, priority_df, road_id) if road_id else "Unknown"
+            sev = max(0, min(1, float(row["severity"])))
             potholes_export.append({
                 "latitude": float(row["latitude"]),
                 "longitude": float(row["longitude"]),
-                "severity": float(row["severity"]),
+                "severity": round(sev, 2),
                 "timestamp": str(row.get("timestamp", "")),
                 "road_name": road_name,
             })
@@ -134,7 +135,7 @@ def export_for_dashboard(edges, priority_df, potholes_df, output_dir: str, visit
         pothole_count = int(props.get("pothole_count", 0) or 0)
         psi = float(props.get("psi", 0) or 0)
         priority_score = float(props.get("priority_score", 0) or 0)
-        avg_severity = float(props.get("avg_severity", 0) or 0)
+        avg_severity = max(0, min(1, float(props.get("avg_severity", 0) or 0)))
         has_bus_data = road_id in visited_road_ids
 
         features.append({
